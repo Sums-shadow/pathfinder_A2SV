@@ -3,17 +3,19 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:nb_utils/nb_utils.dart';
+import 'package:object_detection_app/data/function.data.dart';
 import 'package:object_detection_app/main.dart';
 import 'package:tflite/tflite.dart';
 
 
-class HomePage extends StatefulWidget {
+class DetectionPage extends StatefulWidget {
   @override
-  _HomePageState createState() => _HomePageState();
+  _DetectionPageState createState() => _DetectionPageState();
 }
 
-class _HomePageState extends State<HomePage>
+class _DetectionPageState extends State<DetectionPage>
 {
   CameraController? cameraController;
   CameraImage? imgCamera;
@@ -21,6 +23,7 @@ class _HomePageState extends State<HomePage>
   double? imgHeight;
   double? imgWidth;
   List? recognitionsList;
+  String lastObjectDetect="";
 
 
 
@@ -109,7 +112,6 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-
     loadModel();
     initCamera();
   }
@@ -127,7 +129,15 @@ class _HomePageState extends State<HomePage>
 
     return recognitionsList!.map((result)
     {
-toast(result["detectedClass"]);
+
+      if(lastObjectDetect != result["detectedClass"])
+      {
+
+        lastObjectDetect = result["detectedClass"];
+        FunctionData.speak(text: "There is ${result['detectedClass']}");
+        printInfo(info: "There is ${result}");
+      }
+
       return Positioned(
         left: result["rect"]["x"] * factorX,
         top: result["rect"]["y"] * factorY,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:object_detection_app/HomePage.dart';
+import 'package:object_detection_app/view/DetectionPage.dart';
 import 'package:camera/camera.dart';
+import 'package:object_detection_app/view/homePage.dart';
 
 List<CameraDescription>? cameras;
 
