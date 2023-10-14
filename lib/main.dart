@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:object_detection_app/view/DetectionPage.dart';
 import 'package:camera/camera.dart';
 import 'package:object_detection_app/view/homePage.dart';
 
@@ -17,8 +16,8 @@ class MyApp extends StatelessWidget
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Object Detection',
-      home: HomePage(),
+      title: 'PathFinder',
+      home: HomePage(cameras!),
     );
   }
 }

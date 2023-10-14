@@ -8,7 +8,7 @@ class AppController extends GetxController {
  static RxInt pageIndex = 0.obs;
   static FlutterTts flutterTts = FlutterTts();
   static RxBool isPlaying = false.obs; 
-
+  static RxBool canSpeak=false.obs;
 
 
   @override

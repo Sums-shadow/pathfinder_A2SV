@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import '../controller/AppController.dart';
 
 class FunctionData{
-  static Future speak({text=""}) async{
+  static Future speak({text="", cb}) async{
     await AppController.flutterTts.setLanguage("en-US");
     var result = await AppController.flutterTts.speak(text);
     if (result == 1) AppController.isPlaying.value = true;
     //check if it ends
     AppController.flutterTts.setCompletionHandler(() {
       AppController.isPlaying.value = false;
+      cb;
 
     });
   }
