@@ -8,8 +8,11 @@
 .buildlog/
 .history
 .svn/
+.dart_tool/
 migrate_working_dir/
-
+./build/
+./app/
+./capture/
 # IntelliJ related
 *.iml
 *.ipr

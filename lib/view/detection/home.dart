@@ -41,13 +41,14 @@ class _HomePageDetectionState extends State<HomePageDetection> {
      //  FunctionData.speak(text: "There is a person in front of you");
      streamListening();
     initTTS();
+    loadModel();
   }
   @override
   void dispose() {
     // TODO: implement dispose
     super.dispose();
     _speechToText.stop();
-    _model="";
+    _model="yolo";
 
   }
 
@@ -94,32 +95,11 @@ class _HomePageDetectionState extends State<HomePageDetection> {
   }
 
   loadModel() async {
-    String res;
-    switch (_model) {
-      case yolo:
-        res = (await Tflite.loadModel(
+   (await Tflite.loadModel(
           model: "assets/yolov2_tiny.tflite",
           labels: "assets/yolov2_tiny.txt",
         ))!;
-        break;
-
-      case mobilenet:
-        res = (await Tflite.loadModel(
-            model: "assets/mobilenet_v1_1.0_224.tflite",
-            labels: "assets/mobilenet_v1_1.0_224.txt"))!;
-        break;
-
-      case posenet:
-        res = (await Tflite.loadModel(
-            model: "assets/posenet_mv1_075_float_from_checkpoints.tflite"))!;
-        break;
-
-      default:
-        res = (await Tflite.loadModel(
-            model: "assets/ssd_mobilenet.tflite",
-            labels: "assets/ssd_mobilenet.txt"))!;
-    }
-    print(res);
+    
   }
 
   onSelect(model) {
