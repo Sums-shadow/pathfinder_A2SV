@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 import '../controller/AppController.dart';
 
 class FunctionData{
+
+ static SpeechToText speechToText = SpeechToText();
+ static bool speechEnabled = false;
+
+
+  
   static Future speak({text="", cb}) async{
     await AppController.flutterTts.setLanguage("en-US");
     var result = await AppController.flutterTts.speak(text);
@@ -10,7 +17,7 @@ class FunctionData{
     //check if it ends
     AppController.flutterTts.setCompletionHandler(() {
       AppController.isPlaying.value = false;
-      cb;
+      cb();
 
     });
   }
@@ -23,6 +30,23 @@ class FunctionData{
   static Future stop() async{
     var result = await AppController.flutterTts.stop();
     if (result == 1) AppController.isPlaying.value = false;
+  }
+
+
+
+     static Future initSpeech({cbOnError}) async {
+    speechEnabled = await speechToText.initialize(
+        onStatus: (val) => print("onStatus: $val"),
+        onError: (val)async{
+          print("onError: $val");
+         cbOnError();
+        },
+        debugLogging: true,
+        finalTimeout: const Duration(seconds: 10),
+      
+    );
+
+return speechEnabled;
   }
 
 

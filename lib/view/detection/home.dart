@@ -2,24 +2,24 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
 import 'package:nb_utils/nb_utils.dart';
-import 'package:object_detection_app/controller/AppController.dart';
-import 'package:object_detection_app/view/homePage.dart';
-import 'package:tflite/tflite.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
+import '../../controller/AppController.dart';
 import '../../data/function.data.dart';
 import 'camera.dart';
 import 'bndbox.dart';
 import 'models.dart';
 
 class HomePageDetection extends StatefulWidget {
+  final algo;
   final List<CameraDescription> cameras;
 
-  HomePageDetection(this.cameras);
+  HomePageDetection(this.cameras,{this.algo="mobilenet"});
 
   @override
   _HomePageDetectionState createState() => new _HomePageDetectionState();
@@ -30,43 +30,30 @@ class _HomePageDetectionState extends State<HomePageDetection> {
   int _imageHeight = 0;
   int _imageWidth = 0;
   String _model = "";
-  SpeechToText _speechToText = SpeechToText();
-  bool _speechEnabled = false;
+ 
   late FlutterTts flutterTts;
-  AppController appController = Get.put(AppController());
 
   @override
   void initState() {
     super.initState();
-     //  FunctionData.speak(text: "There is a person in front of you");
+    onSelect(ssd);
+      //  FunctionData.speak(text: "There is a person in front of you");
+     _initSpeech();
      streamListening();
     initTTS();
-    loadModel();
   }
   @override
   void dispose() {
     // TODO: implement dispose
     super.dispose();
-    _speechToText.stop();
-    _model="yolo";
-
+      
   }
 
   void _initSpeech() async {
-    _speechEnabled = await _speechToText.initialize(
-        onStatus: (val) => print("onStatus: $val"),
-        onError: (val){
-          print("onError: $val");
-          _initSpeech();
-        },
-        debugLogging: true,
-        finalTimeout: const Duration(seconds: 10),
-      
-    );
-
-    setState(() {
+ 
+await FunctionData.initSpeech(cbOnError: _startListening);
       _startListening();
-    });
+
   }
 
   void _onSpeechResult(SpeechRecognitionResult result)async {
@@ -76,13 +63,14 @@ class _HomePageDetectionState extends State<HomePageDetection> {
     
     if (word.toLowerCase().startsWith("hello")) {
       AppController.isPlaying.value=false;
-      setState(() {
-        
-      });
+     
 
-    }else if(word.toLowerCase().startsWith("exit")){
+    }else if(word.toLowerCase()=="exit"){
       FunctionData.speak(text: "Exiting the application", cb: (){
-      HomePage(widget.cameras).launch(context, isNewTask: true, pageRouteAnimation: PageRouteAnimation.Fade);
+       setState(() {
+          _model="";
+       });
+      HomePageDetection(widget.cameras).launch(context, isNewTask: true, pageRouteAnimation: PageRouteAnimation.Fade);
 
       });
       
@@ -90,16 +78,38 @@ class _HomePageDetectionState extends State<HomePageDetection> {
   }
 
   void _startListening() async {
-      await _speechToText.listen(onResult: _onSpeechResult);
-    _initSpeech();
+    await FunctionData.speechToText.listen(onResult: _onSpeechResult);
+    
+ 
   }
 
   loadModel() async {
-   (await Tflite.loadModel(
+    String res;
+    switch (_model) {
+      case yolo:
+        res = (await Tflite.loadModel(
           model: "assets/yolov2_tiny.tflite",
           labels: "assets/yolov2_tiny.txt",
         ))!;
-    
+        break;
+
+      case mobilenet:
+        res = (await Tflite.loadModel(
+            model: "assets/mobilenet_v1_1.0_224.tflite",
+            labels: "assets/mobilenet_v1_1.0_224.txt"))!;
+        break;
+
+      case posenet:
+        res = (await Tflite.loadModel(
+            model: "assets/posenet_mv1_075_float_from_checkpoints.tflite"))!;
+        break;
+
+      default:
+        res = (await Tflite.loadModel(
+            model: "assets/ssd_mobilenet.tflite",
+            labels: "assets/ssd_mobilenet.txt"))!;
+    }
+    print(res);
   }
 
   onSelect(model) {
@@ -109,22 +119,23 @@ class _HomePageDetectionState extends State<HomePageDetection> {
     loadModel();
   }
 
-  setRecognitions(recognitions, imageHeight, imageWidth) {
+  setRecognitions(recognitions, imageHeight, imageWidth) async{
     var data = "";
     for (var i = 0; i < recognitions.length; i++) {
       data = "${data + recognitions[i]["detectedClass"]} ";
     }
-  if(!AppController.isPlaying.value){
-    print("IIISSSSS PLAYINGGGG FALSE");
+     if(!AppController.isPlaying.value){
     AppController.isPlaying.value=true;
-    FunctionData.speak(text: "There is a $data in front of you",cb: (){
-              AppController.isPlaying.value=false;
-              print("SET IS PLAYINGGG FALSE");
+   await FunctionData.speak(text: "There is a $data in front of you",cb: (){
+    printInfo(info: "Start listening");
+              _startListening();
 
     } );
+     _startListening();
     
 }
-    print("There is $data recognitions");
+
+    print("There is $data recognitions  ${AppController.isPlaying.value}");
     setState(() {
       _recognitions = recognitions;
       _imageHeight = imageHeight;
@@ -182,8 +193,8 @@ class _HomePageDetectionState extends State<HomePageDetection> {
 
   void streamListening() {
     Timer(const Duration(seconds: 1), () {
-      if (!_speechEnabled) {
-        _initSpeech();
+      if (!FunctionData.speechEnabled) {
+        _startListening();
       }
       streamListening();
     });
