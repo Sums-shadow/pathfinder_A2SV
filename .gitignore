@@ -13,6 +13,7 @@ migrate_working_dir/
 ./build/
 ./app/
 ./capture/
+./flutter_tflite/
 # IntelliJ related
 *.iml
 *.ipr

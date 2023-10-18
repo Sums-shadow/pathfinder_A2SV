@@ -42,7 +42,9 @@ dependencies:
   flutter_tts: ^3.7.0
   lottie: ^2.6.0
   get: ^4.6.1
-  speech_to_text: ^6.3.0
+  flutter_scalable_ocr: ^2.0.0
+  simple_speech_recognition: ^0.0.2
+  permission_handler: ^11.0.1
 
 dev_dependencies:
   flutter_test:

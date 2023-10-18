@@ -1,15 +1,14 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:object_detection_app/data/string.data.dart';
-import 'package:object_detection_app/view/about/about.view.dart';
-import 'package:object_detection_app/view/detection/home.dart';
 import 'package:object_detection_app/view/homePage.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart';
-
-import '../../controller/AppController.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:simple_speech_recognition/simple_speech_recognition.dart';
 import '../../data/function.data.dart';
 
 class IntroView extends StatefulWidget {
@@ -23,37 +22,25 @@ class IntroView extends StatefulWidget {
 
 class _IntroViewState extends State<IntroView> {
 
+   String textSpeech = '';
+  SimpleSpeechRecognition? speechRecognition = SimpleSpeechRecognition();
+  Timer? timer;
+
  
-
-
-
-    void _initSpeech() async {
-    await FunctionData.initSpeech(cbOnError: _startListening);
-      _startListening();
-  }
-
-  void _startListening() async {
-      await FunctionData.speechToText.listen(onResult: _onSpeechResult);
-  }
-  void _onSpeechResult(SpeechRecognitionResult result)async {
-    print("###############################${result.recognizedWords}");
-    var word = result.recognizedWords;
-    
-    if (word.toLowerCase().startsWith("star")) {
-      AppController.isPlaying.value=false;
-      setValue(StringData.notFirstTime, true);
-     HomePage(widget.cameras, isFirstTime: true,).launch(context, isNewTask: true);
-
-    }else{
-       FunctionData.speak(text:"I don't understand, can you repeat please one", cb: ()=>_initSpeech());
-     
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     startSpeechIntroduction();
+        recognize();
+    streamListening();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+      timer!.cancel();
+
   }
   @override
   Widget build(BuildContext context) {
@@ -62,9 +49,7 @@ class _IntroViewState extends State<IntroView> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(onPressed: ()=>AboutView().launch(context), icon: Icon(Icons.question_mark_rounded)),
-          IconButton(onPressed: ()=>toast("Page not available yet"), icon: Icon(Icons.help))
-       
+         
         ],
       ),
       body: ListView(
@@ -82,6 +67,7 @@ class _IntroViewState extends State<IntroView> {
             ),
           ).paddingAll(15),
           Lottie.asset('assets/start.json',   height: FunctionData.getHeight(context)*.3, width: FunctionData.getWidth(context)*.3,).onTap((){
+             setValue(StringData.notFirstTime, true);
                 HomePage(widget.cameras, isFirstTime: true,).launch(context, isNewTask: true);
 
           }),
@@ -91,6 +77,36 @@ class _IntroViewState extends State<IntroView> {
   }
 
   void startSpeechIntroduction() {
-    FunctionData.speak(text:StringData.WelcomeText, cb: ()=>_initSpeech()).then((value) => print("FINI"));
+    FunctionData.speak(text:StringData.WelcomeText);
   }
+
+    void recognize() async {
+    if (!(await Permission.speech.isGranted)) {
+      await Permission.speech.request();
+      recognize();
+    } else {
+      initRecognition();
+    }
+  }
+
+  void initRecognition() async {
+    try {
+      textSpeech = await speechRecognition!.start("en_EN");
+      speechRecognition!.completer!.future.then((value) {
+        printInfo(info: "RESULT $value");
+        if (value.toLowerCase().startsWith("star")) {
+          setValue(StringData.notFirstTime, true);
+          HomePage(widget.cameras, isFirstTime: true,).launch(context, isNewTask: true);
+          
+        }
+      });
+      printInfo(info: "RESULT AFTER INIT $textSpeech");
+    } catch(e){
+      printError(info: e.toString());
+    }
+  }
+
+
+    void streamListening() => timer =
+      Timer.periodic(const Duration(seconds: 2), (timer) => recognize());
 }
