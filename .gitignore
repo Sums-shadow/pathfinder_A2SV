@@ -12,7 +12,6 @@
 migrate_working_dir/
 ./build/
 ./app/
-./capture/
 ./flutter_tflite/
 # IntelliJ related
 *.iml
@@ -36,7 +35,6 @@ migrate_working_dir/
 .pub/
 /build/
 /app/
-/capture/
 
 # Symbolication related
 app.*.symbols
