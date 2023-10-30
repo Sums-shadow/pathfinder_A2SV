@@ -1,5 +1,5 @@
 # PathFinder Application
-![Main interface](https://drive.google.com/file/d/1vr3rYp7RXR-zwWrC5TYD_OZhNhrsxtHq/view?usp=sharing)
+![Main interface](https://github.com/Sums-shadow/pathfinder_A2SV/blob/main/capture/main.jpg)
 ```PathFinder is an app that helps visually impaired people to navigate through the world. It uses object detection to detect objects in the environment and then uses text to speech to tell the user what is in front of them. It also uses a camera to detect the user's surroundings and then uses text to speech to tell the user what is in front of them. It also uses a camera to detect the user's surroundings and then uses text to speech to tell the user what is in front of them.```
 
 ⸐⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸏⸑
