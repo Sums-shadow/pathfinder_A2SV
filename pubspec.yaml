@@ -43,8 +43,15 @@ dependencies:
   lottie: ^2.6.0
   get: ^4.6.1
   flutter_scalable_ocr: ^2.0.0
-  simple_speech_recognition: ^0.0.2
   permission_handler: ^11.0.1
+  speech_to_text: ^6.3.0
+  shake: ^2.2.0
+  weather: ^3.1.1
+  geolocator: ^10.1.0
+  vibration: ^1.8.3
+  dio:
+  flutter_barcode_scanner:
+
 
 dev_dependencies:
   flutter_test:

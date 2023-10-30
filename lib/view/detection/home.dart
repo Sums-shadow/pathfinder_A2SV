@@ -1,25 +1,25 @@
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:nb_utils/nb_utils.dart';
+import 'package:object_detection_app/controller/AppController.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
 import '../../data/function.data.dart';
 import 'camera.dart';
 import 'bndbox.dart';
 import 'models.dart';
-import 'package:simple_speech_recognition/simple_speech_recognition.dart';
 
 class HomePageDetection extends StatefulWidget {
   final algo;
   final List<CameraDescription> cameras;
 
-  HomePageDetection(this.cameras, {this.algo = "mobilenet"});
+  const HomePageDetection(this.cameras, {super.key, this.algo = "mobilenet"});
 
   @override
-  _HomePageDetectionState createState() => new _HomePageDetectionState();
+  _HomePageDetectionState createState() => _HomePageDetectionState();
 }
 
 class _HomePageDetectionState extends State<HomePageDetection> {
@@ -27,56 +27,50 @@ class _HomePageDetectionState extends State<HomePageDetection> {
   int _imageHeight = 0;
   int _imageWidth = 0;
   String _model = "";
-  String textSpeech = '';
-  SimpleSpeechRecognition? speechRecognition = SimpleSpeechRecognition();
-  Timer? timer;
-  bool describ = false;
+
+  var data = "";
+  SpeechToText speechToText = SpeechToText();
 
   @override
   void initState() {
     super.initState();
-     onSelect(ssd);
-
-    recognize();
-     streamListening();
+    AppController.pageIndex.value = 1;
+    onSelect(yolo);
+    startListening();
   }
 
   @override
   void dispose() async {
     super.dispose();
-    timer!.cancel();
-  }
-
-  void recognize() async {
-    if (!(await Permission.speech.isGranted)) {
-      await Permission.speech.request();
-      recognize();
-    } else {
-      initRecognition();
-    }
-  }
-
-  void initRecognition() async {
-    try {
-      textSpeech = await speechRecognition!.start("en_EN");
-      print("Object $textSpeech");
-      speechRecognition!.completer!.future.then((value) {
-        printInfo(info: "RESULT $value");
-        if (value == "what is in front of me") {
-          describ = true;
-        }
-      });
-      printInfo(info: "RESULT AFTER INIT $textSpeech");
-    } catch(e){
-      printError(info: e.toString());
-    }
   }
 
   loadModel() async {
-      
-       await Tflite.loadModel(
+    String res;
+    switch (_model) {
+      case yolo:
+        res = (await Tflite.loadModel(
+          model: "assets/yolov2_tiny.tflite",
+          labels: "assets/yolov2_tiny.txt",
+        ))!;
+        break;
+
+      case mobilenet:
+        res = (await Tflite.loadModel(
+            model: "assets/mobilenet_v1_1.0_224.tflite",
+            labels: "assets/mobilenet_v1_1.0_224.txt"))!;
+        break;
+
+      case posenet:
+        res = (await Tflite.loadModel(
+            model: "assets/posenet_mv1_075_float_from_checkpoints.tflite"))!;
+        break;
+
+      default:
+        res = (await Tflite.loadModel(
             model: "assets/ssd_mobilenet.tflite",
-            labels: "assets/ssd_mobilenet.txt");
+            labels: "assets/ssd_mobilenet.txt"))!;
+    }
+    print(res);
   }
 
   onSelect(model) {
@@ -87,25 +81,31 @@ class _HomePageDetectionState extends State<HomePageDetection> {
   }
 
   setRecognitions(recognitions, imageHeight, imageWidth) async {
-    var data = "";
+    data = "";
     for (var i = 0; i < recognitions.length; i++) {
       data = "${data + recognitions[i]["detectedClass"]} ";
     }
-    if (describ) {
-      describ = false;
+    AppController.objectDetected.value = data;
+    // printInfo(info: "Detect object ${AppController.startDetect.value}");
+    if (AppController.startDetect.value) {
+      AppController.startDetect.value = false;
+      AppController.clearCurrentCommand();
       await FunctionData.speak(
-          text: "There is a $data in front of you",
+          text: "There is a ${data.isEmpty ? 'nothing' : data} in front of you",
           cb: () {
             printInfo(info: "Start listening");
+            startListening();
           });
     }
 
     // print("There is $data recognitions  ${AppController.isPlaying.value}");
-    setState(() {
-      _recognitions = recognitions;
-      _imageHeight = imageHeight;
-      _imageWidth = imageWidth;
-    });
+    if (mounted) {
+      setState(() {
+        _recognitions = recognitions;
+        _imageHeight = imageHeight;
+        _imageWidth = imageWidth;
+      });
+    }
   }
 
   @override
@@ -134,7 +134,7 @@ class _HomePageDetectionState extends State<HomePageDetection> {
                     onPressed: () => onSelect(posenet),
                   ),
                   ElevatedButton(
-                      child: const Text(posenet), onPressed: () => recognize()),
+                      child: const Text(posenet), onPressed: () => null),
                 ],
               ),
             )
@@ -152,11 +152,25 @@ class _HomePageDetectionState extends State<HomePageDetection> {
                     screen.height,
                     screen.width,
                     _model),
+                Obx(() => Positioned(
+                      bottom: 30,
+                      left: 30,
+                      child: Icon(
+                        Icons.circle,
+                        size: 10,
+                        color: AppController.isSpeachEnabled.value
+                            ? Colors.green
+                            : Colors.red,
+                      ).onTap(() {
+                        print(Navigator.of(context));
+                      }),
+                    )),
               ],
             ),
     );
   }
 
-  void streamListening() => timer =
-      Timer.periodic(const Duration(seconds: 2), (timer) => recognize());
+  void startListening() async {
+    await speechToText.listen();
+  }
 }
